@@ -3,15 +3,22 @@ import sys
 import json
 import time
 import base64
-from zmq.eventloop import ioloop, zmqstream
+from threading import Thread
 
+from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
-def encode(msg):
-    return base64.b64encode(msg)
+def screen(s):
+    return s.encode("utf-8")
 
-def decode(msg):
-    return base64.b64decode(msg)
+def descreen(b):
+    return b.decode("utf-8")
+
+def screen64(s):
+    return base64.b64encode(screen(s))
+
+def descreen64(b):
+    return descreen(base64.b64decode(b))
 
 # ------------------------------
 class Broker(object):
@@ -19,7 +26,7 @@ class Broker(object):
     def __init__(self):
         self._publisher = None
         self._suscriber = None
-        self._pairs = []
+        self._thread = None
 
     def __del__(self):
         ioloop.IOLoop.instance().stop()        
@@ -36,20 +43,40 @@ class Broker(object):
 
     def suscribe(self, topics, callback):
         self._suscriber.suscribe(topics, callback)
-
-    # --------
-    def listen(self):
+ 
+    def spin(self):
         """
-        Starts polling the suscribed/ peer sockets already connected to
-        Blocks the process/ thread that called it
+        Runs listen event loop in a separate process
+        Returns inmediately, shouldn't block outer thread
         """
-        ioloop.IOLoop.current(instance=True).start()
-    
-    def peek(self, topics):
-        return self._suscriber.peek(topics)
+        print("Spin new process")
+        loop = ioloop.IOLoop.instance()
+        self._thread = Thread(target=self._suscriber.listen, args=(loop,))
+        self._thread.daemon = True
+        self._thread.start()
 
-    def addPeer(self, ip, port):
-        pass
+    def stop(self):
+        ioloop.IOLoop.instance().stop()  
+        # self._thread.join()      
+
+
+# --------
+    def parseMessage(self, rcvd):
+
+        topic=""
+        can = None
+
+        try:
+            topic = descreen(rcvd[0])
+            msg = descreen64(rcvd[1])
+
+            can = json.loads(msg)            
+
+        except zmq.ZMQError:
+            topic = 'ERR'
+
+        return(topic, can)
+            
 
 # ------------------------------
 class _Publisher(object):
@@ -63,8 +90,9 @@ class _Publisher(object):
 
     # --------
     def send(self, topic, message):
-        json_string = encode(json.dumps(message))
-        self.socket.send("%s %s" % (topic, json_string))
+        json_bytes = screen64(json.dumps(message))
+        topic_bytes = screen(topic)
+        self.socket.send_multipart([topic_bytes, json_bytes])
 
 # ------------------------------
 class _Suscriber(object):
@@ -89,11 +117,22 @@ class _Suscriber(object):
         """
         """
         for topic in topics:
-            self.socket.setsockopt(zmq.SUBSCRIBE, topic)
+            print ("Suscribe to topic %s" % topic)
+            self.socket.setsockopt_string(zmq.SUBSCRIBE, topic)
 
+        self._callback = callback
         self._stream_sub = zmqstream.ZMQStream(self.socket)
-        self._stream_sub.on_recv(callback)
+        self._stream_sub.on_recv(self._callback)
 
+    def listen(self, loop):
+        """
+        Starts polling the suscribed/ peer sockets already connected to
+        Blocks the process/ thread that called it
+        """
+
+        print("Listen in new process")
+        loop.start()
+        print("Finished listening")
 
 
     # --------
@@ -101,7 +140,7 @@ class _Suscriber(object):
         """
         Tries to receive message of any of the topics in the array
         does not block; returns the topic and message as a named tuple, or
-        if there were no messages, returns topic "BOO"
+        if there were no messages, returns topic "ERR"
         """
         for topic in topics:
             self.socket.setsockopt(zmq.SUBSCRIBE, topic)
@@ -114,8 +153,8 @@ class _Suscriber(object):
             return (topic, json.loads(msg))
 
         except zmq.ZMQError:
-            topic = 'BOO'
-            return ('BOO', None)
+            topic = 'ERR'
+            return ('ERR', None)
 
 
 
