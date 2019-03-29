@@ -1,8 +1,8 @@
 # Axon: hub of zmq PUB/SUB Broker and influxdb logging backend 
 
 Extracted Broker functionality from fanequinha as independent module, "should" be installable with:
-
-`sudo pip install git+git://github.com/dpmilian/axon.git#egg=axon`
+(inside pipenv shell folder):
+`pipenv install git+git://github.com/dpmilian/axon.git#egg=axon`
 
 Broker now runs separate threads for Publisher and Suscriber, for example (server.py in repo):
 
