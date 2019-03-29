@@ -7,7 +7,7 @@ Extracted Broker functionality from fanequinha as independent module, "should" b
 Broker now runs separate threads for Publisher and Suscriber, for example (server.py in repo):
 
 ```
-from broker import Broker
+from axon.broker import Broker
 
 def messageHandler(multipart_msg):
     topic, can = broker.parseMessage(multipart_msg)
@@ -44,4 +44,4 @@ except KeyboardInterrupt:                             # Ctrl + c closes
 # TODO:
 - Version updates? 
 - Check import works correctly?
-- Store module under development: use *influxdb* as timestamped storage, seems very applicable to task at hand, also very simple to implement
+- Store module (`from axon.store import Store`) under development: use *influxdb* as timestamped storage, seems very applicable to task at hand, also very simple to implement
