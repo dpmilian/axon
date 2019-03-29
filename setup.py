@@ -18,7 +18,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=['zmq'],
+    install_requires=['zmq', 'tornado'],
 )
 
 
