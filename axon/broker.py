@@ -56,7 +56,8 @@ class Broker(object):
         self._thread.start()
 
     def stop(self):
-        ioloop.IOLoop.instance().stop()  
+        ioloop.IOLoop.instance().stop()
+  
         # self._thread.join()      
 
 

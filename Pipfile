@@ -9,6 +9,7 @@ verify_ssl = true
 zmq = "*"
 tornado = "*"
 dronekit-sitl = "*"
+influxdb = "*"
 
 [requires]
 python_version = "3.6"

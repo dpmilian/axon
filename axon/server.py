@@ -1,4 +1,5 @@
 from broker import Broker
+from store import Store
 import time
 import sys
 
@@ -9,6 +10,7 @@ def messageHandler(multipart_msg):
 
 
 broker = Broker()
+store = Store(database="arducopter-log")
 
 broker.setPublisher(port=4000)
 broker.setSuscriber(ip="localhost", port=4001)
