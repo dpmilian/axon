@@ -119,7 +119,11 @@ class _Suscriber(object):
         """
         for topic in topics:
             print ("Suscribe to topic %s" % topic)
-            self.socket.setsockopt_string(zmq.SUBSCRIBE, topic)
+            try:
+                self.socket.setsockopt(zmq.SUBSCRIBE, screen(topic))
+            except TypeError:
+                self.socket.setsockopt_string(zmq.SUBSCRIBE, screen(topic))
+            
 
         self._callback = callback
         self._stream_sub = zmqstream.ZMQStream(self.socket)
