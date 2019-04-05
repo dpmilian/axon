@@ -49,7 +49,7 @@ class Broker(object):
         Runs listen event loop in a separate process
         Returns inmediately, shouldn't block outer thread
         """
-        print("Spin new process")
+        #print("Spin new process")
         loop = ioloop.IOLoop.instance()
         self._thread = Thread(target=self._suscriber.listen, args=(loop,))
         self._thread.daemon = True
@@ -135,9 +135,9 @@ class _Suscriber(object):
         Blocks the process/ thread that called it
         """
 
-        print("Listen in new process")
+        #print("Listen in new process")
         loop.start()
-        print("Finished listening")
+        #print("Finished listening")
 
 
     # --------
