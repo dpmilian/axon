@@ -1,5 +1,5 @@
-from ../axon/broker import Broker
-from ../axon/store import Store
+from axon import broker
+from axon import store
 import time
 import sys
 
@@ -9,14 +9,15 @@ def messageHandler(multipart_msg):
     print ("[%s/%d] : %s" % (topic, can["cnt"], can["msg"]))
 
 
-broker = Broker()
-store = Store(database="arducopter-log")
+hub = broker.Broker()
+st = store.Store()
+st.setDatabase(dbname="arducopter-log")
 
-broker.setPublisher(port=4000)
-broker.setSuscriber(ip="localhost", port=4001)
-broker.suscribe(["STS", "POS"], messageHandler)
+hub.setPublisher(port=4000)
+hub.setSuscriber(ip="localhost", port=4001)
+hub.suscribe(["STS", "POS"], messageHandler)
 
-broker.spin()
+hub.spin()
 
 cnt = 0
 try :
@@ -25,14 +26,14 @@ try :
             "msg": "BLA BLA BLA",
             "cnt": cnt
         }
-        broker.publish("CMD", can)
+        hub.publish("CMD", can)
         cnt+=1
         print("Publish %d" % cnt)
 
         time.sleep(1)
 
 except KeyboardInterrupt:
-    broker.stop()
+    hub.stop()
     sys.exit()
 
 
