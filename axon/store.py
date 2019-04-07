@@ -26,12 +26,7 @@ class Store(object):
         self.client.create_retention_policy('forever', 'INF', 3, dbname)
 
 
-    def now(self):
-        d = datetime.datetime.utcnow()
-        return d.isoformat("T") + "Z"
-
-
-    def put(self, measurement, time = self.now(), tags, fields):
+    def put(self, measurement, fields, tags = None, time = None):
         """
         measurement -> id of measurement
         time -> default now, otherwise RFC RFC3339 value
@@ -46,6 +41,9 @@ class Store(object):
             }
         """
 
+        if time == None:
+            time = self.client.now()
+
         json_body = [
             {
 
@@ -59,7 +57,7 @@ class Store(object):
         self.client.write_points(json_body)
 
 
-    def get_interval(self, measurement, tags = None, fields = None, time_start=None, time_end=None):
+    def get(self, measurement,  fields = None, tags = None, time_start=None, time_end=None):
         """
         tags -> [tag1, tag2]
         fields -> [field1, field2]
@@ -68,12 +66,12 @@ class Store(object):
 
         stags = ''
         if (tags != None):
-            for(tag in tags):
+            for tag in tags:
                 stags += '"' + tag + '"::tag,'
 
         sfields = ''
         if (fields != None):
-            for(field in fields):
+            for field in fields:
                 sfields += '"' +  field + '"::field,'
             sfields = sfields[:-1]      # remove last comma
 
