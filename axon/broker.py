@@ -3,7 +3,9 @@ import sys
 import json
 import time
 import base64
-from threading import Thread
+import threading
+
+Thread = threading.Thread
 
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
@@ -27,9 +29,11 @@ class Broker(object):
         self._publisher = None
         self._suscriber = None
         self._thread = None
+        self._loop = None
 
     def __del__(self):
-        ioloop.IOLoop.instance().stop()        
+        if (self._loop != None):
+            self._loop.stop()        
 
     def setPublisher(self, port):
         self._publisher = _Publisher(port)
@@ -49,16 +53,20 @@ class Broker(object):
         Runs listen event loop in a separate process
         Returns inmediately, shouldn't block outer thread
         """
-        #print("Spin new process")
-        loop = ioloop.IOLoop.instance()
-        self._thread = Thread(target=self._suscriber.listen, args=(loop,))
+        print("Spin new process, main id %d" % threading.get_ident())
+        self._loop = ioloop.IOLoop.instance()
+        self._thread = Thread(target=self._suscriber.listen, args=(self._loop,))
         self._thread.daemon = True
         self._thread.start()
+        
 
     def stop(self):
-        ioloop.IOLoop.instance().stop()
-  
-        # self._thread.join()      
+        #ioloop.IOLoop.instance().stop()
+        #print("Main process function to stop ioloop, id %d" % threading.get_ident())
+        self._loop.add_callback(self._loop.stop)        # on next io loop, call stop function
+        print("Waiting for thread to stop")
+        self._thread.join()      
+        print("Stopped")
 
 
 # --------
@@ -135,31 +143,10 @@ class _Suscriber(object):
         Blocks the process/ thread that called it
         """
 
-        #print("Listen in new process")
+        print("Listen in new thread id %d" % threading.get_ident())
         loop.start()
-        #print("Finished listening")
+        print("Finished listening")
 
-
-    # --------
-    def peek(self, topics):
-        """
-        Tries to receive message of any of the topics in the array
-        does not block; returns the topic and message as a named tuple, or
-        if there were no messages, returns topic "ERR"
-        """
-        for topic in topics:
-            self.socket.setsockopt(zmq.SUBSCRIBE, topic)
-
-        try:
-            rcvd = self.socket.recv(flags=zmq.NOBLOCK)
-            topic, msg = rcvd.split()
-            msg = base64.b64decode(msg)
-
-            return (topic, json.loads(msg))
-
-        except zmq.ZMQError:
-            topic = 'ERR'
-            return ('ERR', None)
 
 
 

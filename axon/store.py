@@ -7,7 +7,7 @@ class Store(object):
         
         self.host = host
         self.port = port
-
+        self.connect()
 
     def connect(self):
         self.client = InfluxDBClient(host=self.host, port=self.port)
@@ -21,7 +21,7 @@ class Store(object):
     def setDatabase(self, dbname):
         dbs = self.client.get_list_database()
         print(dbs)
-        self.client.create(dbname)        # if it already exists, doesn't give any error...
+        self.client.create_database(dbname)        # if it already exists, doesn't give any error...
         self.client.switch_database(dbname)
         self.client.create_retention_policy('forever', 'INF', 3, dbname)
 
