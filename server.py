@@ -17,8 +17,6 @@ hub.setPublisher(port=4000)
 hub.setSuscriber(ip="localhost", port=4001)
 hub.suscribe(["STS", "POS"], messageHandler)
 
-hub.spin()
-
 cnt = 0
 try :
     while (True):

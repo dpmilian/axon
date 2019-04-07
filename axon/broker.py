@@ -48,13 +48,17 @@ class Broker(object):
     def suscribe(self, topics, callback):
         self._suscriber.suscribe(topics, callback)
  
-    def spin(self):
+    def spin(self, periodicCallback, interval):
         """
         Runs listen event loop in a separate process
         Returns inmediately, shouldn't block outer thread
+        @ v0.0.8 Will run asynchronously periodicCallback every interval s
         """
         print("Spin new process, main id %d" % threading.get_ident())
         self._loop = ioloop.IOLoop.instance()
+        self._scheduler = ioloop.PeriodicCallback(periodicCallback, interval * 1000)
+        self._scheduler.start()
+
         self._thread = Thread(target=self._suscriber.listen, args=(self._loop,))
         self._thread.daemon = True
         self._thread.start()
@@ -137,12 +141,18 @@ class _Suscriber(object):
         self._stream_sub = zmqstream.ZMQStream(self.socket)
         self._stream_sub.on_recv(self._callback)
 
+    def checkResults(self):
+        print("CHECKED")
+        
+
+
     def listen(self, loop):
         """
         Starts polling the suscribed/ peer sockets already connected to
         Blocks the process/ thread that called it
         """
-
+        #loop.add_callback(self.checkResults)
+        
         print("Listen in new thread id %d" % threading.get_ident())
         loop.start()
         print("Finished listening")
